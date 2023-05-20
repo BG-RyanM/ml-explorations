@@ -5,9 +5,12 @@ Machine Learning Explorations, 2023
 
 This repository contains Jupyter notebooks that accompany the video course for "Deep Learning with PyTorch", by Anand Saha. This course is from April 2018 and is somewhat out of date, in that the PyTorch API has deprecated or removed a few 2018-era functions.
 
-Look in the folder `Deep-learning-with-PyTorch-video/` for notebooks pertaining to the course.
-
-There are other folders, such as `first-nn/`, that contain exercises that I've found online or have thought of.
+Contents:
+Folder    | Description
+----------|----------------
+`Deep-learning-with-PyTorch-video/` | Notebooks pertaining to the course. I've modified them somewhat from the original, fixing outdated code that no longer works and adding more comments.
+`first-nn/` | An exercise I found online. It's [here](https://machinelearningmastery.com/develop-your-first-neural-network-with-pytorch-step-by-step/).
+`notes/` | [Notes](./notes) on the course lessons.
 
 ## Setup (As Needed for Deeping Learning With PyTorch)
 
