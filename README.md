@@ -1,6 +1,20 @@
 # ml-explorations
 Machine Learning Explorations, 2023
 
+## Table of Contents
+
+- [ml-explorations](#ml-explorations)
+  * [Table of Contents](#table-of-contents)
+  * [Basic Info](#basic-info)
+  * [Valuable Information Online](#valuable-information-online)
+  * [Setup (As Needed for Deeping Learning With PyTorch)](#setup--as-needed-for-deeping-learning-with-pytorch-)
+    + [Basic Setup, Covering Part 1 of the Course](#basic-setup--covering-part-1-of-the-course)
+    + [CUDA: Video 1-4](#cuda--video-1-4)
+    + [Video 1-5](#video-1-5)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
+
 ## Basic Info
 
 This repository contains Jupyter notebooks that accompany the video course for "Deep Learning with PyTorch", by Anand Saha. This course is from April 2018 and is somewhat out of date, in that the PyTorch API has deprecated or removed a few 2018-era functions.
