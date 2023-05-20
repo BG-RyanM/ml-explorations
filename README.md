@@ -12,6 +12,16 @@ Folder    | Description
 [first-nn/](./first-nn) | An exercise I found online. It's [here](https://machinelearningmastery.com/develop-your-first-neural-network-with-pytorch-step-by-step/).
 [notes/](./notes) | Notes I took on the course lessons.
 
+## Valuable Information Online 
+
+(Feel free to suggest additions.)
+
+| Site                                                                                                           | Description                                                                         |
+|----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [YouTube](https://www.youtube.com/watch?v=aircAruvnKk&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi)                 | 3Blue1Brown's YouTube introductory series on neural networks.                       |
+| [machinelearningmastery.com](https://machinelearningmastery.com/deep-learning-with-pytorch-9-day-mini-course/) | Deep Learning with PyTorch (9-Day Mini-Course)                                      |
+| [StatQuest](https://www.youtube.com/@statquest)                                                                | A fun Youtube channel that explains various aspects of ML and statistical analysis. |
+
 ## Setup (As Needed for Deeping Learning With PyTorch)
 
 ### Basic Setup, Covering Part 1 of the Course
