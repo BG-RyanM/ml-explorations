@@ -24,6 +24,7 @@ Folder    | Description
 ----------|----------------
 [Deep-learning-with-PyTorch-video/](./Deep-learning-with-PyTorch-video) | Notebooks pertaining to the course. I've modified them somewhat from the original, fixing outdated code that no longer works and adding more comments to explain what's happening.
 [first-nn/](./first-nn) | An exercise I found online. It's [here](https://machinelearningmastery.com/develop-your-first-neural-network-with-pytorch-step-by-step/).
+[stock-analysis/](./stock-analysis) | Experiments with stock market data.
 [notes/](./notes) | Notes I took on the course lessons.
 
 ## Valuable Information Online 
