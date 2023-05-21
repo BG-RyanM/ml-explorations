@@ -30,8 +30,6 @@ class Ticker(object):
         self._current_date: datetime = est_dt
         self._start_date: datetime = est_dt - timedelta(days=(years * 365))
 
-        self._sma_info = set()
-
         self._lock = asyncio.Lock()
 
     async def load(self, force_web_scrape: bool = False):
@@ -161,32 +159,6 @@ class Ticker(object):
         """
         return self._data_frame
 
-    def get_plotable_dataframe(self, start_index: int, end_index: int, spacing: int = 1) -> \
-            Tuple[pd.DataFrame, List[int], List[str]]:
-        """
-        Gets a dataframe that's convenient to plot with matplotlib. The indices of returned DF
-        will just be numbers, rather than dates, which prevents weekends and holidays from showing
-        up on the chart. Also generates labels to be plotted on x-axis.
-
-        :param start_index: starting index within ticker's overall dataframe
-        :param end_index: ending index within ticker's overall dataframe
-        :param spacing: spacing between date labels on x-axis
-        :return: (plottable DataFrame, days for x ticks -- day 0 being leftmost, dates to put on x ticks)
-        """
-        partial_df = self._data_frame.iloc[start_index:end_index]
-        date_labels = [d.strftime("%Y-%m-%d") for d in pd.to_datetime(self._data_frame.index[start_index:end_index])]
-        x_indices = [i for i in range(len(date_labels))]
-
-        column_names = ["Open", "Close", "High", "Low", "Volume"]
-        for sma in self._sma_info:
-            column_names.append(f"SMA{sma}")
-        frame_dict = {}
-        for col in column_names:
-            series = partial_df[col]
-            frame_dict[col] = list(series.array)
-
-        return pd.DataFrame(frame_dict), x_indices[::spacing], date_labels[::spacing]
-
     @property
     def date_breaks(self):
         return self._date_breaks
@@ -222,17 +194,6 @@ class Ticker(object):
         ret_dt = datetime.strptime(ret_as_str, '%Y-%m-%d')
         return ret_as_str if as_str else ret_dt
 
-    def add_sma(self, window):
-        self._sma_info.add(window)
-
-        # Calculating simple moving average using .rolling(window).mean(),
-        # with window size = 30
-        sma_name = f"SMA{window}"
-        self._data_frame[sma_name] = self._data_frame['Close'].rolling(window).mean()
-
-        # Removing all the NULL values using dropna() method
-        # self._data_frame.dropna(inplace=True)
-
     def print_info(self):
         print(f"=================\nSymbol is: {self._symbol}")
         print("First five entries:\n--------")
@@ -264,7 +225,20 @@ class TickerManager(object):
     Manages Ticker objects
     """
 
+    _instance = None
+    _initialized = False
+
+    def __new__(cls):
+        if TickerManager._instance is None:
+            TickerManager._instance = object.__new__(cls)
+        return TickerManager._instance
+
     def __init__(self):
+        if TickerManager._initialized:
+            return
+        else:
+            TickerManager._initialized = True
+
         self._tickers = []  # list of Tickers
         self._ticker_map = {}  # map from ticker symbol (e.g. SPY) to Ticker
 
