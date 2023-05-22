@@ -163,6 +163,10 @@ class Ticker(object):
     def date_breaks(self):
         return self._date_breaks
 
+    @property
+    def num_entries(self) -> int:
+        return len(self._data_frame.index)
+
     def get_date(self, start_date: Optional[datetime] = None, days_offset: int = 0, as_str= False) -> Union[datetime, str]:
         """
         Returns date some number of days earlier/later than specified date.
@@ -193,6 +197,26 @@ class Ticker(object):
         # Do this to get rid of hours/minutes/seconds
         ret_dt = datetime.strptime(ret_as_str, '%Y-%m-%d')
         return ret_as_str if as_str else ret_dt
+
+    def get_index_of_date(self, the_date: Union[datetime, str], forward_scan=False) -> Optional[int]:
+        if isinstance(the_date, datetime):
+            desired_dt = the_date
+        else:
+            desired_dt = datetime.strptime(the_date, '%Y-%m-%d')
+        index = 0 if forward_scan else self.num_entries - 1
+        while 0 <= index < self.num_entries:
+            dt = self._data_frame.index[index]
+            dt_as_str = dt.strftime("%Y-%m-%d")
+            dt = datetime.strptime(dt_as_str, '%Y-%m-%d')
+            if forward_scan and dt >= desired_dt:
+                return index
+            if not forward_scan and dt <= desired_dt:
+                return index
+            index += 1 if forward_scan else -1
+        return None
+
+    def get_date_of_index(self, index: int) -> Optional[str]:
+        return self._data_frame.index[index]
 
     def print_info(self):
         print(f"=================\nSymbol is: {self._symbol}")

@@ -8,7 +8,7 @@ from core.ticker import Ticker
 
 class Indicator(object):
 
-    def __init__(self, type_name: str, parameters: Tuple, on_main_chart=True):
+    def __init__(self, type_name: str, parameters: Tuple, on_main_chart=True, safety_window=0):
         """
         :param type_name: indicator type, e.g. "SMA"
         :param parameters: tuple of parameters for indicator, e.g. (30,)
@@ -17,6 +17,7 @@ class Indicator(object):
         self._type_name = type_name
         self._parameters = parameters
         self._on_main_chart = on_main_chart
+        self._safety_window = safety_window
 
     @property
     def type_name(self):
@@ -54,14 +55,15 @@ class Chart(object):
         self._ticker = ticker
         self._data_frame: Optional[DataFrame] = None
 
-        # Maps indicator type, e.g. "SMA" to inner set, which contains Indicator objects
-        self._indicators: Dict[str, Set[Indicator]] = {}
+        # Maps indicator type, e.g. "SMA" to inner list, which contains Indicator objects
+        self._indicators: Dict[str, List[Indicator]] = {}
+        # Maps a specific indicator name, e.g. "SMA-30", to its Indicator
+        self._indicators_by_name: Dict[str, Indicator] = {}
+
+        self._left_safety_window = 0
+        self._right_safety_window = 0
 
         self._build_local_dateframe()
-
-    def _build_local_dateframe(self):
-        """The chart has its own copy of the ticker's DataFrame. (More columns can be added.)"""
-        self._data_frame = self._ticker.dataframe.copy(deep=True)
 
     @property
     def symbol(self) -> str:
@@ -70,19 +72,17 @@ class Chart(object):
         """
         return self._ticker.symbol
 
-    def _add_indicator(self, type_name: str, parameters: Tuple) -> str:
-        """
-        Adds an indicator to the chart (its values must next be added to local DataFrame by caller).
+    @property
+    def num_entries(self) -> int:
+        return self._ticker.num_entries
 
-        :param type_name: name of indicator type, e.g. "SMA"
-        :param parameters: tuple of parameters for this indicator
-        :return: name of new indicator, e.g. "SMA-30"
-        """
-        if self._indicators.get(type_name) is None:
-            self._indicators[type_name] = set()
-        new_indicator = Indicator(type_name, parameters)
-        self._indicators[type_name].add(new_indicator)
-        return new_indicator.name
+    @property
+    def dataframe(self) -> Optional[DataFrame]:
+        return self._data_frame
+
+    @property
+    def ticker(self) -> Ticker:
+        return self._ticker
 
     def get_indicator(self, type_name: str, parameters: Tuple) -> Optional[Indicator]:
         """
@@ -98,6 +98,9 @@ class Chart(object):
                 return indicator
         return None
 
+    def get_indicator_by_name(self, name: str):
+        return self._indicators_by_name.get(name, None)
+
     def get_all_indicator_names(self) -> List[str]:
         """
         Returns the names of all indicators that have been added to the chart, e.g.
@@ -111,14 +114,14 @@ class Chart(object):
 
     def add_sma(self, window):
         """Adds a SMA indicator to chart."""
-        sma_name = self._add_indicator("SMA", (window,))
+        sma_name = self._add_indicator("SMA", (window,), safety_window=window)
 
         # Calculating simple moving average using .rolling(window).mean(),
         # with window size = 30
         self._data_frame[sma_name] = self._data_frame['Close'].rolling(window).mean()
 
         # Removing all the NULL values using dropna() method
-        # self._data_frame.dropna(inplace=True)
+        #self._data_frame.dropna(inplace=True)
 
     def get_plotable_dataframe(self, start_index: int, end_index: int, spacing: int = 1, adjust_to_sma: int = 0) -> \
             Tuple[pd.DataFrame, List[int], List[str]]:
@@ -153,6 +156,24 @@ class Chart(object):
 
         return pd.DataFrame(frame_dict), x_indices[::spacing], date_labels[::spacing]
 
+    def profit_test(self, index: int, allowed_loss: float, desired_gain: float, max_days_in: int) -> bool:
+        if index < 0:
+            index = self.num_entries + index
+        start_price = self._data_frame.iloc[index]["Close"]
+        day_count = 0
+        while index < self.num_entries-1 and day_count < max_days_in:
+            index += 1
+            price = self._data_frame.iloc[index]["Close"]
+            if price < start_price - start_price * allowed_loss:
+                # Too much loss
+                return False
+            if price >= start_price + start_price * desired_gain:
+                # Yes, the original index was a good buy point
+                return True
+            day_count += 1
+        # We reached the end of the data or allotted days before achieving desired profit
+        return False
+
     def _adjust_frame_dict(self, frame_dict: Dict, adjust_to_sma):
         adjust_to_sma_name = f"SMA-{adjust_to_sma}"
 
@@ -170,4 +191,28 @@ class Chart(object):
         for i in range(len(adjustment_sma_list)):
             adjustment_sma_list[i] = 1.0
 
+    def _build_local_dateframe(self):
+        """The chart has its own copy of the ticker's DataFrame. (More columns can be added.)"""
+        self._data_frame = self._ticker.dataframe.copy(deep=True)
+
+    def _add_indicator(self, type_name: str, parameters: Tuple, safety_window: int) -> str:
+        """
+        Adds an indicator to the chart (its values must next be added to local DataFrame by caller).
+
+        :param type_name: name of indicator type, e.g. "SMA"
+        :param parameters: tuple of parameters for this indicator
+        :return: name of new indicator, e.g. "SMA-30"
+        """
+        if self._indicators.get(type_name) is None:
+            self._indicators[type_name] = []
+        new_indicator = Indicator(type_name, parameters, safety_window=safety_window)
+
+        if safety_window > self._left_safety_window:
+            self._left_safety_window = safety_window
+
+        # Is it already there? Add only if not.
+        if self._indicators_by_name.get(new_indicator.name) is None:
+            self._indicators[type_name].append(new_indicator)
+            self._indicators_by_name[new_indicator.name] = new_indicator
+        return new_indicator.name
 
