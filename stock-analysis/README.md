@@ -42,10 +42,22 @@ Key Classes:
 
 In my opinion, raw price data isn't in an ideal format for DL analysis. Most (tradeable) stocks see their value increase exponentially over years, so a neural network that worked well on prices ranging from $10 to $100, would probably struggle with prices ranging from $500 to $1000, and vice-versa.
 
-My special innovation is to adjust a chart from showing absolute price data to showing price data relative to a particular Simple Moving Average. That moving average becomes a horizontal line with a value of 1.0, and all price data is expressed as a multiplier.
+My special innovation (I'm sure others have thought of it) is to adjust a chart from showing absolute price data to showing price data relative to a particular Simple Moving Average. That moving average becomes a horizontal line with a value of 1.0, and all price data is expressed as a multiplier.
 
 ![](./images/RegularPriceData.png)    
 `Regular Price Data`
 
 ![](./images/AdjustedPriceData.png)    
 `Adjusted Price Data`
+
+## Deep Learning Applications
+
+### Exploration One
+
+This will be a very simple "vanilla" NN, which acts upon daily signals with no direct awareness of what happened on earlier days. However, when indicators such as moving averages or the MACD oscillator are added to the chart, these implicitly reflect past history. Thus, the NN will be able to infer something about the trends that are in progress on a given day (for example, if the value of a short-term SMA is above that of a longer-term SMA, that often indicates an uptrend).
+
+The desired output of the NN will simply be the answer to the question, "is today a good day to buy the stock?"
+
+An easy set of criteria for determining that might be:
+* From day `n` onward, does the stock price achieve a certain percentage in gain without declining from its starting value (on day `n`) by another percentage?
+* Is the profit target achieved within a certain number of days? (Ordinarily, when trading stocks, time spent in a position that's slow to produce results represents an opportunity cost. However, when trading options, we might prefer to find situations where the stock price DOESN'T move.)
