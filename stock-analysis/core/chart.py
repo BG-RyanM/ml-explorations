@@ -8,16 +8,18 @@ from core.ticker import Ticker
 
 class Indicator(object):
 
-    def __init__(self, type_name: str, parameters: Tuple, on_main_chart=True, safety_window=0):
+    def __init__(self, type_name: str, parameters: Tuple, on_main_chart=True, safety_window=0, adjustable=True):
         """
         :param type_name: indicator type, e.g. "SMA"
         :param parameters: tuple of parameters for indicator, e.g. (30,)
         :param on_main_chart: True if indicator should be displayed on main chart
+        :param adjustable: see Chart docstring for explanation of adjustment
         """
         self._type_name = type_name
         self._parameters = parameters
         self._on_main_chart = on_main_chart
         self._safety_window = safety_window
+        self._adjustable = adjustable
 
     @property
     def type_name(self):
@@ -45,6 +47,10 @@ class Chart(object):
     (open, high, low, close, indicators with price values) are adjusted to be relative to a specific SMA.
     The new values are expressed as a multiple of that SMA on that day, with the SMA itself being changed
     to a value of 1.0. This makes it easier for a deep learning system to analyze a chart.
+
+    A Chart also has a "safety" window. This is the part of a date range in which all signals are present
+    and can be used. An easy example is a Simple Moving Average: the 200 day MA won't be generated until
+    200 days from the start of data.
     """
 
     def __init__(self, ticker: Ticker):
@@ -116,12 +122,17 @@ class Chart(object):
         """Adds a SMA indicator to chart."""
         sma_name = self._add_indicator("SMA", (window,), safety_window=window)
 
-        # Calculating simple moving average using .rolling(window).mean(),
-        # with window size = 30
         self._data_frame[sma_name] = self._data_frame['Close'].rolling(window).mean()
 
         # Removing all the NULL values using dropna() method
         #self._data_frame.dropna(inplace=True)
+
+    def add_ema(self, window):
+        """Adds an EMA indicator to chart."""
+        ema_name = self._add_indicator("EMA", (window,), safety_window=window)
+
+        #self._data_frame[ema_name] = self._data_frame['Close'].rolling(window).mean()
+        self._data_frame[ema_name] = self._data_frame['Close'].ewm(span=window, adjust=False).mean()
 
     def get_plotable_dataframe(self, start_index: int, end_index: int, spacing: int = 1, adjust_to_sma: int = 0) -> \
             Tuple[pd.DataFrame, List[int], List[str]]:
@@ -136,14 +147,21 @@ class Chart(object):
         :param adjust_to_sma: see class-level docstring about adjustment
         :return: (plottable DataFrame, days for x ticks -- day 0 being leftmost, dates to put on x ticks)
         """
-        do_adjustment = self.get_indicator("SMA", (adjust_to_sma,)) is not None
-        partial_df = self._data_frame.iloc[start_index:end_index]
+
         date_labels = [d.strftime("%Y-%m-%d") for d in pd.to_datetime(self._data_frame.index[start_index:end_index])]
         x_indices = [i for i in range(len(date_labels))]
 
+        ret_df = self.get_ml_dataframe(start_index, end_index, adjust_to_sma)
+
+        return ret_df, x_indices[::spacing], date_labels[::spacing]
+
+    def get_ml_dataframe(self, start_index: int, end_index: int, adjust_to_sma: int):
+        do_adjustment = self.get_indicator("SMA", (adjust_to_sma,)) is not None
+        partial_df = self._data_frame.iloc[start_index:end_index]
+
         # Basically makes a copy of the local dataframe, but with the date indices replaced with sequential
         # integers.
-        column_names = ["Open", "Close", "High", "Low", "Volume"]
+        column_names = ["Open", "Close", "High", "Low", "Volume", "Long", "Day"]
         for indicator_name in self.get_all_indicator_names():
             column_names.append(indicator_name)
         frame_dict = {}
@@ -154,9 +172,23 @@ class Chart(object):
         if do_adjustment:
             self._adjust_frame_dict(frame_dict, adjust_to_sma)
 
-        return pd.DataFrame(frame_dict), x_indices[::spacing], date_labels[::spacing]
+        return pd.DataFrame(frame_dict)
 
-    def profit_test(self, index: int, allowed_loss: float, desired_gain: float, max_days_in: int) -> bool:
+    def get_usable_window_for_ml(self) -> Tuple[int, int]:
+        return self._left_safety_window, self.num_entries - self._right_safety_window
+
+    def is_long_entry_point(self, index: int, allowed_loss: float, desired_gain: float, max_days_in: int) -> bool:
+        """
+        Determines whether a given day is a good point to go long on a stock, by looking at movement of the
+        stock on subsequent days. If the stock achieves a certain return within a certain number of days,
+        without hitting a certain allowable loss point, then the day specified is a good day to enter.
+
+        :param index: proposed entry day
+        :param allowed_loss: max allowable loss
+        :param desired_gain: profit target
+        :param max_days_in: days allowed for the profit target to be hit.
+        :return: True if this is a good entry point for going long
+        """
         if index < 0:
             index = self.num_entries + index
         start_price = self._data_frame.iloc[index]["Close"]
@@ -173,6 +205,15 @@ class Chart(object):
             day_count += 1
         # We reached the end of the data or allotted days before achieving desired profit
         return False
+
+    def calculate_long_entry_points(self, *args):
+        date_labels = [d.strftime("%Y-%m-%d") for d in pd.to_datetime(self._data_frame.index[:])]
+
+        entry_flags = [] # will be 0 or 1
+        for i in range(self.num_entries):
+            entry_flags.append(1 if self.is_long_entry_point(i, *args) else 0)
+        self._data_frame["Long"] = entry_flags
+        self._data_frame["Day"] = date_labels
 
     def _adjust_frame_dict(self, frame_dict: Dict, adjust_to_sma):
         adjust_to_sma_name = f"SMA-{adjust_to_sma}"
