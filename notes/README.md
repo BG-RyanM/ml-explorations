@@ -88,3 +88,80 @@ test_accuracy.append((100 * correct / total))
 ```
 
 Don't expect much GPU improvement for lightweight data set compared to running on CPU. Makes more of a difference with image processing.
+
+## Section Three: Computer Vision
+
+### Tasks in Computer Vision
+
+* Classification (e.g. detect cat in photo)
+* Classification + localization (e.g. detect cat in photo and establish its coordinates)
+* Object detection (e.g. recognize both cat and dog in photo)
+* Instance segmentation (e.g. find all cars in photo and highlight each with a different color)
+
+Total pixels in typical image
+1265 x 949 = 1200485 pixels, 3 channels
+It's impossible to have a fully-connected layer process all this data.
+In CNN, convolutional layers have a sliding window of limited size (can be thought of as a moving neuron) that learns salient features
+
+Spacial relationship important, don't want to lose structure
+Simple NN can't do job
+
+### Operations
+
+* convolution
+* activation
+* pooling: max, average
+
+#### Convolution Operation
+
+Imagine 3 x 3 window sliding across input image. Left cells contain -1, right cells contain 1 (for example -- could be other values). Window is kernel.
+Result for a single position (with x,y being where center of kernel is on input image): 
+* pix[x-1][y-1] * -1 + pix[x-1][y] * -1 + pix[x-1][y+1] * -1 + pix[x+1][y-1] * 1 + pix[x+1][y] * 1 + pix[x+1][y+1]
+Stride: number of pixels kernel moves in one step
+* stride is hyperparameter
+Padding: extra pixels (zero value added around borders of input image)
+Output activation map: result of operation
+
+Important class
+`torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, etc...)`
+
+Training
+* kernel's weights are learned through training, much as with weights in fully connected NN layer
+* number of kernels are determined by number of channels in incoming layer, number of channels desired in outgoing layer
+
+#### Pooling layer
+
+Another sliding window with stride, but different math:
+* max: choose max pixel within window
+* average: average of all pixels
+
+### Preprocessing and Training
+
+MNIST Dataset: database of handwritten digits, 0 -  9. 60k training images, 10k test images. Greyscale.
+
+Image normalization (preprocessing step)
+* want pixels to have mean of 0, standard deviation of 1
+* calculate mean, stddev for of each channel for all images in dataset
+* normalize each pixel with mean, stddev
+* helps network learn fast, have better gradient
+
+Dropout
+* handy technique to prevent overfitting to training set
+* deactivate some number of neurons at random -- reduces overdependence on any neurons in particular
+
+### Helpful Diagrams and Sites
+
+![](./Convolution.png)     
+`Convolution`     
+
+![](Pooling.png)     
+`Pooling`    
+
+![](./CNNLayers.png)     
+`Layers of CNN`    
+
+#### Sites
+
+Explanation of Convolutions by 3Blue1Brown: https://www.youtube.com/watch?v=KuXjwB4LzSA
+Explanation of CNNs by StatsQuest: https://www.youtube.com/watch?v=HGwBXDKFk9I
+
