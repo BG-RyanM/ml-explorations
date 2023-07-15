@@ -1,5 +1,26 @@
 # Notes
 
+Table of Contents
+- [Notes](#notes)
+  * [Section Two](#section-two)
+    + [General](#general)
+    + [The Jupyter Notebook](#the-jupyter-notebook)
+      - [Loss Function](#loss-function)
+      - [Optimizers](#optimizers)
+      - [Training It](#training-it)
+      - [Outdated Code](#outdated-code)
+    + [Convert to GPU](#convert-to-gpu)
+  * [Section Three: Computer Vision](#section-three--computer-vision)
+    + [Tasks in Computer Vision](#tasks-in-computer-vision)
+    + [Operations](#operations)
+      - [Convolution Operation](#convolution-operation)
+      - [Pooling layer](#pooling-layer)
+    + [Preprocessing and Training](#preprocessing-and-training)
+    + [Helpful Diagrams and Sites](#helpful-diagrams-and-sites)
+      - [Sites](#sites)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 ## Section Two
 
 ### General
@@ -8,13 +29,25 @@ Main Topics
 * Loss Functions
 * Optimizers
 
+#### Neuron Math
+
 Neuron representation:
 `output = fn(w1 * ip1 + w2 * ip2 + ... + wn * ipn + bias)`
 
-(Can be represented with vector multiply, or matrix-vector multiply when dealing with the whole layer and not just one neuron in it)
+Can be represented with vector multiply, or matrix-vector multiply when dealing with the whole layer and not just one neuron in it. With matrix, each row represents weights of one neuron in layer.
+
+Matrix math for one layer:
+`v_output = activation(W * v_input + v_bias)` 
 
 Activation functions:
 Sigmoid(), Tanh(), or ReLU()
+
+#### Backpropagation
+
+Intuiting gradient descent:
+Imagine a small submarine trying to find the deepest point in a body of water. The submarine has limited visibility distance. It descends to the lake/sea floor, then observes the slope of the floor at that point. From there, it attempts to follow the slope deeper. However, it could run into local minima, the deepest point in one part of the body of water, but not the deepest point overall.
+
+With backpropagation, we compare desired output of a layer to actual output, then apply an adjustment to that layer's weights. Adjustment is propagated backwords from higher layers to lower.
 
 ### The Jupyter Notebook
 
@@ -165,3 +198,85 @@ Dropout
 Explanation of Convolutions by 3Blue1Brown: https://www.youtube.com/watch?v=KuXjwB4LzSA
 Explanation of CNNs by StatsQuest: https://www.youtube.com/watch?v=HGwBXDKFk9I
 
+## Section Four: Sequence Models -- RNN for Text Generation
+
+Other info sources:
+* https://www.simplilearn.com/tutorials/deep-learning-tutorial/rnn
+
+### Sequence Models Motivation
+
+CNNs are good with spatially invariant data (e.g. lines can be anywhere in the image). 
+
+RNNs exploit temporal invariance. They deal with sequential data, with recurring patterns over time.
+
+Uses:
+* Text autocomplete
+* Machine translation
+* Sentiment analysis
+* Predicting stock prices
+* Named entity recognition, e.g. finding mention of celebrities in news articles
+
+### Word embedding
+
+How can we convert words into numbers? (Since NNs deal with numbers.)
+
+Corpus
+* the sentence, e.g. "The dog jumped over the fence."
+
+Vocabulary
+* unordered set of all words representing problem domain, e.g. "dog", "over", "the" etc.
+
+#### Numerical representation of text
+
+##### Method One: One Hot Encoding
+
+![](OneHotEncoding.png)
+
+Problem: matrix gets way too big. Vector for a word would not hold meaning.
+
+##### Method Two: Word Embedding
+
+![](WordEmbedding.png)
+
+Advantages:
+Matrix is dense and of reduced dimension. Contextual similarity between words. Each dimension tries to capture a certain characteristic of vocabulary, e.g. gender aspect.
+
+Contextual similarity:
+* if gender is a characteristic of interest, "man" and "king" are similar, while "woman" and "queen" are similar
+* if verb test is a characteristic of interest, "walking" and "swimming" are similar, while "walked" and "swam" are similar
+
+Normally, it is better to use industry-standard, pre-trained models.
+
+### RNNs
+
+RNNs are good at data that has temporal aspect.
+
+Consider: "Apple is a type of fruit. It is red in color."
+Want to connect "Apple" and "It", "Apple" and "fruit", "Apple" and "red".
+Must have memory of words it encountered earlier.
+Therefore, each cell has memory of state of earlier cell.
+
+#### Weights and Dimensions
+
+Model dimensions:
+* batch size `b`: a batch is set of sequences (sentences) passed into network to train it
+* embedding size `e`: size of vector that represents a word
+* vocabulary size `v`: number of words in vocabulary
+* hidden units `h`: number of hidden layers?
+
+Back Propagation Through Time Size (BPTT size): how many steps back through time to perform backpropagation. This is hyperparameter.
+
+Input `X`: a vector whose length matches embedding size
+
+#### Types of RNNs
+
+* Vanilla: no recurrence
+* One-to-many: in image captioning, we take in the image at `t(0)`. Subsequent time steps used to generate each word of caption text.
+* Many-to-one: in sentiment classification, we take in words as input during steps `t(0)` to `t(n)`. At `t(n)` we spit out sentiment analysis.
+* Many-to-many: in translation, we take in `n` words in language A, then at `t(n)` we begin outputting translated text.
+* Many-to-many: in video classification, video changes at each time step
+
+#### Problems
+
+* Vanishing gradient: gradients get smaller and less meaningful as they pass back in time
+* Exploding gradient: gradients get larger as they pass back through time
