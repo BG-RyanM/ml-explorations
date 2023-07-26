@@ -1,4 +1,6 @@
-# Notes
+# Machine Learning Notes
+
+![](Odyssey.jpg)
 
 Table of Contents
 - [Notes](#notes)
@@ -251,12 +253,20 @@ Normally, it is better to use industry-standard, pre-trained models.
 
 RNNs are good at data that has temporal aspect.
 
+![](Apple.png)
+
 Consider: "Apple is a type of fruit. It is red in color."
 Want to connect "Apple" and "It", "Apple" and "fruit", "Apple" and "red".
 Must have memory of words it encountered earlier.
 Therefore, each cell has memory of state of earlier cell.
 
+Unrolling an RNN:
+
+![](UnfoldingRNN.png)
+
 #### Weights and Dimensions
+
+![](HiddenStateBehavior.png)
 
 Model dimensions:
 * batch size `b`: a batch is set of sequences (sentences) passed into network to train it
@@ -270,6 +280,8 @@ Input `X`: a vector whose length matches embedding size
 
 #### Types of RNNs
 
+![](RNNUses.png)
+
 * Vanilla: no recurrence
 * One-to-many: in image captioning, we take in the image at `t(0)`. Subsequent time steps used to generate each word of caption text.
 * Many-to-one: in sentiment classification, we take in words as input during steps `t(0)` to `t(n)`. At `t(n)` we spit out sentiment analysis.
@@ -280,3 +292,24 @@ Input `X`: a vector whose length matches embedding size
 
 * Vanishing gradient: gradients get smaller and less meaningful as they pass back in time
 * Exploding gradient: gradients get larger as they pass back through time
+
+Solutions:
+* Vanishing: use better architectures, e.g. LSTM and GRU
+* Exploding: use gradient clipping
+
+### The Exercise
+
+We are using GRU:
+```
+self.rnn = nn.GRU(embed_size, hidden_size, num_layers, dropout)
+```
+* `embed_size`: number of expected features in input. What's feature???
+* `hidden_size`: number of features in hidden state
+* `num_layers`: number of recurrent layers, i.e. number of GRUs stacked together
+* `dropout`: if non-zero, introduces dropout later on outputs of each GRU layer, except last layer. Probability of dropout equals value.
+
+#### Language Model
+
+![](LanguageModel.png)
+
+LM answers the question, "what should come next?"
