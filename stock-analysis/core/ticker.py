@@ -70,10 +70,14 @@ class Ticker(object):
                 est_tz = timezone("US/Eastern")
                 dates = self._data_frame.index
                 first_dti: DatetimeIndex = dates[0]
-                first_date = datetime(year=first_dti.year, month=first_dti.month, day=first_dti.day)
+                first_date = datetime(
+                    year=first_dti.year, month=first_dti.month, day=first_dti.day
+                )
                 first_date = est_tz.localize(first_date)
                 last_dti: DatetimeIndex = dates[-1]
-                last_date = datetime(year=last_dti.year, month=last_dti.month, day=last_dti.day)
+                last_date = datetime(
+                    year=last_dti.year, month=last_dti.month, day=last_dti.day
+                )
                 last_date = est_tz.localize(last_date)
                 date_pair_before = (self._start_date, _modify_date(first_date, -1))
                 if _date_earlier_than(date_pair_before[0], date_pair_before[1]):
@@ -90,12 +94,21 @@ class Ticker(object):
                 # pandas DataFrame
                 if (date_pair[1] - date_pair[0]).days >= 0:
                     ticker_data = yf.Ticker(self._symbol)
-                    start_date_str = f"{date_pair[0].year}-{date_pair[0].month}-{date_pair[0].day}"
-                    end_date_str = f"{date_pair[1].year}-{date_pair[1].month}-{date_pair[1].day}"
-                    _logger.info(f"now scraping, start date = {start_date_str}, end date = {end_date_str}")
-                    scraped_data_frame = ticker_data.history(period='1d', start=start_date_str, end=end_date_str)
+                    start_date_str = (
+                        f"{date_pair[0].year}-{date_pair[0].month}-{date_pair[0].day}"
+                    )
+                    end_date_str = (
+                        f"{date_pair[1].year}-{date_pair[1].month}-{date_pair[1].day}"
+                    )
                     _logger.info(
-                        f"got {self._symbol} from scraping, start date = {start_date_str}, end date = {end_date_str}")
+                        f"now scraping, start date = {start_date_str}, end date = {end_date_str}"
+                    )
+                    scraped_data_frame = ticker_data.history(
+                        period="1d", start=start_date_str, end=end_date_str
+                    )
+                    _logger.info(
+                        f"got {self._symbol} from scraping, start date = {start_date_str}, end date = {end_date_str}"
+                    )
                     return scraped_data_frame
                 return None
 
@@ -167,7 +180,9 @@ class Ticker(object):
     def num_entries(self) -> int:
         return len(self._data_frame.index)
 
-    def get_date(self, start_date: Optional[datetime] = None, days_offset: int = 0, as_str= False) -> Union[datetime, str]:
+    def get_date(
+        self, start_date: Optional[datetime] = None, days_offset: int = 0, as_str=False
+    ) -> Union[datetime, str]:
         """
         Returns date some number of days earlier/later than specified date.
         :param start_date: date to use. If not given, use today's date
@@ -175,12 +190,16 @@ class Ticker(object):
         :param as_str: if True, return as human-readable string
         :return: requested date
         """
-        ret_dt = (start_date if start_date else self._current_date) + timedelta(days=days_offset)
+        ret_dt = (start_date if start_date else self._current_date) + timedelta(
+            days=days_offset
+        )
         ret_as_str = ret_dt.strftime("%Y-%m-%d")
 
         # We want the date to be one on which trading actually occurred
         valid_trading_day = False
-        present_dts = [d.strftime("%Y-%m-%d") for d in pd.to_datetime(self._data_frame.index)]
+        present_dts = [
+            d.strftime("%Y-%m-%d") for d in pd.to_datetime(self._data_frame.index)
+        ]
         original_ret_dt = ret_dt
         while not valid_trading_day:
             if ret_as_str in present_dts:
@@ -195,19 +214,21 @@ class Ticker(object):
                 ret_as_str = ret_dt.strftime("%Y-%m-%d")
 
         # Do this to get rid of hours/minutes/seconds
-        ret_dt = datetime.strptime(ret_as_str, '%Y-%m-%d')
+        ret_dt = datetime.strptime(ret_as_str, "%Y-%m-%d")
         return ret_as_str if as_str else ret_dt
 
-    def get_index_of_date(self, the_date: Union[datetime, str], forward_scan=False) -> Optional[int]:
+    def get_index_of_date(
+        self, the_date: Union[datetime, str], forward_scan=False
+    ) -> Optional[int]:
         if isinstance(the_date, datetime):
             desired_dt = the_date
         else:
-            desired_dt = datetime.strptime(the_date, '%Y-%m-%d')
+            desired_dt = datetime.strptime(the_date, "%Y-%m-%d")
         index = 0 if forward_scan else self.num_entries - 1
         while 0 <= index < self.num_entries:
             dt = self._data_frame.index[index]
             dt_as_str = dt.strftime("%Y-%m-%d")
-            dt = datetime.strptime(dt_as_str, '%Y-%m-%d')
+            dt = datetime.strptime(dt_as_str, "%Y-%m-%d")
             if forward_scan and dt >= desired_dt:
                 return index
             if not forward_scan and dt <= desired_dt:
@@ -226,7 +247,7 @@ class Ticker(object):
         print(self._data_frame.tail(5))
         print("Most recent date breaks:\n--------")
         for i in range(3):
-            print(self._date_breaks[-(i+1)])
+            print(self._date_breaks[-(i + 1)])
 
     def _compute_date_breaks(self):
         """
@@ -240,8 +261,12 @@ class Ticker(object):
         # retrieve the dates that ARE in the original dataset
         present_dts = [d.strftime("%Y-%m-%d") for d in pd.to_datetime(df.index)]
         # define dates with missing values
-        self._date_breaks = [d for d in all_dts.strftime("%Y-%m-%d").tolist() if not d in present_dts]
-        self._date_breaks_as_dt = [datetime.strptime(db, '%Y-%m-%d') for db in self._date_breaks]
+        self._date_breaks = [
+            d for d in all_dts.strftime("%Y-%m-%d").tolist() if not d in present_dts
+        ]
+        self._date_breaks_as_dt = [
+            datetime.strptime(db, "%Y-%m-%d") for db in self._date_breaks
+        ]
 
 
 class TickerManager(object):
