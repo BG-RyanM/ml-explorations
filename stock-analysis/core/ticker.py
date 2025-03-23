@@ -25,6 +25,8 @@ class Ticker(object):
         self._date_breaks_as_dt: List[datetime] = []
 
         current_dt = datetime.now()
+        # HACK
+        current_dt = current_dt - timedelta(days=1)
         est_tz = timezone("US/Eastern")
         est_dt = est_tz.localize(current_dt)
         self._current_date: datetime = est_dt
@@ -184,7 +186,9 @@ class Ticker(object):
         self, start_date: Optional[datetime] = None, days_offset: int = 0, as_str=False
     ) -> Union[datetime, str]:
         """
-        Returns date some number of days earlier/later than specified date.
+        Returns date some number of days earlier/later than specified date. If the found date
+        is not a trading day, then return the first trading day that occurs after it.
+
         :param start_date: date to use. If not given, use today's date
         :param days_offset: if a negative number, step back in time; if positive, forward
         :param as_str: if True, return as human-readable string
@@ -220,6 +224,14 @@ class Ticker(object):
     def get_index_of_date(
         self, the_date: Union[datetime, str], forward_scan=False
     ) -> Optional[int]:
+        """
+        Given a date, get its index. If not a trading day, get index of nearest date that is.
+
+        :param the_date: date
+        :param forward_scan: if True, nearest trading day is the first that comes after specified
+            date. If False, it's the nearest that comes BEFORE.
+        :return: index or None, if can't be found
+        """
         if isinstance(the_date, datetime):
             desired_dt = the_date
         else:
@@ -237,6 +249,9 @@ class Ticker(object):
         return None
 
     def get_date_of_index(self, index: int) -> Optional[str]:
+        """
+        Get date of entry at given index
+        """
         return self._data_frame.index[index]
 
     def print_info(self):

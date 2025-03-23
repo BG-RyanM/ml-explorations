@@ -50,6 +50,28 @@ My special innovation (I'm sure others have thought of it) is to adjust a chart 
 ![](./images/AdjustedPriceData.png)    
 `Adjusted Price Data`
 
+## How to run
+
+Need to install conda environment:
+```commandline
+conda create -n ml-pytorch python=3.9 matplotlib numpy
+```
+
+See installed conda environments with:
+```commandline
+conda env list
+```
+
+Activate it:
+```commandline
+conda activate ml-pytorch
+```
+
+Run Jupyter Notebook
+```commandline
+jupyter notebook
+```
+
 ## Deep Learning Applications
 
 ### Exploration One
